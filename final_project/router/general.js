@@ -19,36 +19,59 @@ public_users.post("/register", (req,res) => {
   return res.status(200).json({message: "User successfully registered. Now you can login"});
 });
 
-// Get the book list available in the shop
-public_users.get('/',function (req, res) {
-  return res.status(200).send(JSON.stringify(books, null, 4));
+// Raw book data, served as JSON so the routes below can fetch it with Axios
+public_users.get('/booksdata', (req, res) => res.status(200).json(books));
+
+// Fetch the book data with Axios (returns a promise)
+const fetchBooks = () => axios.get(`${BASE_URL}/booksdata`).then(response => response.data);
+
+// Get the book list available in the shop (promise callbacks)
+public_users.get('/', function (req, res) {
+  fetchBooks()
+    .then(allBooks => res.status(200).send(JSON.stringify(allBooks, null, 4)))
+    .catch(() => res.status(500).json({message: "Unable to retrieve books"}));
 });
 
-// Get book details based on ISBN
-public_users.get('/isbn/:isbn',function (req, res) {
-  const book = books[req.params.isbn];
-  if (!book) return res.status(404).json({message: "Book not found"});
-  return res.status(200).json(book);
- });
-
-// Get book details based on author
-public_users.get('/author/:author',function (req, res) {
-  const author = req.params.author.toLowerCase();
-  const result = Object.entries(books)
-    .filter(([, b]) => b.author.toLowerCase() === author)
-    .map(([isbn, b]) => ({ isbn, ...b }));
-  if (result.length === 0) return res.status(404).json({message: "No books found for this author"});
-  return res.status(200).json({ booksbyauthor: result });
+// Get book details based on ISBN (async/await)
+public_users.get('/isbn/:isbn', async function (req, res) {
+  try {
+    const allBooks = await fetchBooks();
+    const book = allBooks[req.params.isbn];
+    if (!book) return res.status(404).json({message: "Book not found"});
+    return res.status(200).json(book);
+  } catch (err) {
+    return res.status(500).json({message: "Unable to retrieve books"});
+  }
 });
 
-// Get all books based on title
-public_users.get('/title/:title',function (req, res) {
-  const title = req.params.title.toLowerCase();
-  const result = Object.entries(books)
-    .filter(([, b]) => b.title.toLowerCase() === title)
-    .map(([isbn, b]) => ({ isbn, ...b }));
-  if (result.length === 0) return res.status(404).json({message: "No books found with this title"});
-  return res.status(200).json({ booksbytitle: result });
+// Get book details based on author (async/await)
+public_users.get('/author/:author', async function (req, res) {
+  try {
+    const allBooks = await fetchBooks();
+    const author = req.params.author.toLowerCase();
+    const result = Object.entries(allBooks)
+      .filter(([, b]) => b.author.toLowerCase() === author)
+      .map(([isbn, b]) => ({ isbn, ...b }));
+    if (result.length === 0) return res.status(404).json({message: "No books found for this author"});
+    return res.status(200).json({ booksbyauthor: result });
+  } catch (err) {
+    return res.status(500).json({message: "Unable to retrieve books"});
+  }
+});
+
+// Get all books based on title (async/await)
+public_users.get('/title/:title', async function (req, res) {
+  try {
+    const allBooks = await fetchBooks();
+    const title = req.params.title.toLowerCase();
+    const result = Object.entries(allBooks)
+      .filter(([, b]) => b.title.toLowerCase() === title)
+      .map(([isbn, b]) => ({ isbn, ...b }));
+    if (result.length === 0) return res.status(404).json({message: "No books found with this title"});
+    return res.status(200).json({ booksbytitle: result });
+  } catch (err) {
+    return res.status(500).json({message: "Unable to retrieve books"});
+  }
 });
 
 //  Get book review

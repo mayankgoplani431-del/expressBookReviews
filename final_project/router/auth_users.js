@@ -24,7 +24,7 @@ regd_users.post("/login", (req,res) => {
   }
   const accessToken = jwt.sign({ data: username }, "access", { expiresIn: 60 * 60 });
   req.session.authorization = { accessToken, username };
-  return res.status(200).json({message: "User successfully logged in"});
+  return res.status(200).json({message: "Login successful!"});
 });
 
 // Add or modify a book review
@@ -34,7 +34,7 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
   const review = req.query.review;
   if (!review) return res.status(400).json({message: "Review is required"});
   book.reviews[req.session.authorization.username] = review;
-  return res.status(200).json({message: `The review for the book with ISBN ${req.params.isbn} has been added/updated.`, reviews: book.reviews});
+  return res.status(200).json({message: `Review for ISBN ${req.params.isbn} added/updated successfully`, reviews: book.reviews});
 });
 
 // Delete the logged-in user's review
@@ -44,7 +44,7 @@ regd_users.delete("/auth/review/:isbn", (req, res) => {
   const username = req.session.authorization.username;
   if (!(username in book.reviews)) return res.status(404).json({message: "No review by this user for this book"});
   delete book.reviews[username];
-  return res.status(200).json({message: `Review for the book with ISBN ${req.params.isbn} posted by the user ${username} deleted.`});
+  return res.status(200).json({message: `Review for ISBN ${req.params.isbn} deleted`});
 });
 
 module.exports.authenticated = regd_users;
